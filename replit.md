@@ -2,7 +2,7 @@
 
 ## Overview
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+pnpm workspace monorepo. The API server is a Python FastAPI app using Gemini AI via Replit AI Integrations.
 
 ## Stack
 
@@ -10,11 +10,12 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Node.js version**: 24
 - **Package manager**: pnpm
 - **TypeScript version**: 5.9
-- **API framework**: Express 5
-- **Database**: PostgreSQL + Drizzle ORM
-- **Validation**: Zod (`zod/v4`), `drizzle-zod`
+- **API framework**: FastAPI (Python 3.11) — served via uvicorn
+- **AI**: Google Gemini (`google-genai`) via Replit AI Integrations (no user API key needed)
+- **Database**: PostgreSQL + Drizzle ORM (available, not currently used)
+- **Validation**: Zod (`zod/v4`), `drizzle-zod` (TypeScript libs), Pydantic (Python)
 - **API codegen**: Orval (from OpenAPI spec)
-- **Build**: esbuild (CJS bundle)
+- **Build**: esbuild (CJS bundle — unused now that server is Python)
 
 ## Structure
 
@@ -50,17 +51,16 @@ Every package extends `tsconfig.base.json` which sets `composite: true`. The roo
 
 ## Packages
 
-### `artifacts/api-server` (`@workspace/api-server`)
+### `artifacts/api-server`
 
-Express 5 API server. Routes live in `src/routes/` and use `@workspace/api-zod` for request and response validation and `@workspace/db` for persistence.
+FastAPI (Python 3.11) server. Entry point is `main.py`. Served by uvicorn. Routes are mounted under `/api` via the proxy.
 
-- Entry: `src/index.ts` — reads `PORT`, starts Express
-- App setup: `src/app.ts` — mounts CORS, JSON/urlencoded parsing, routes at `/api`
-- Routes: `src/routes/index.ts` mounts sub-routers; `src/routes/health.ts` exposes `GET /health` (full path: `/api/health`)
-- Depends on: `@workspace/db`, `@workspace/api-zod`
-- `pnpm --filter @workspace/api-server run dev` — run the dev server
-- `pnpm --filter @workspace/api-server run build` — production esbuild bundle (`dist/index.cjs`)
-- Build bundles an allowlist of deps (express, cors, pg, drizzle-orm, zod, etc.) and externalizes the rest
+- Entry: `artifacts/api-server/main.py` — FastAPI app definition + all route handlers
+- Routes:
+  - `GET /api/healthz` — health check
+  - `POST /api/parse-treat` — accepts `{"text": "..."}`, returns `{"treat": "...", "location": "..."}`
+- AI: uses `google-genai` Python SDK with Replit AI Integrations (env vars `AI_INTEGRATIONS_GEMINI_API_KEY` and `AI_INTEGRATIONS_GEMINI_BASE_URL` are auto-set)
+- Dev server: `uvicorn main:app --host 0.0.0.0 --port $PORT --reload --app-dir /home/runner/workspace/artifacts/api-server`
 
 ### `lib/db` (`@workspace/db`)
 
