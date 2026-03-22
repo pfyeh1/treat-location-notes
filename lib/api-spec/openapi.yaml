@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: parse-treat
+    description: Parse treat and location from text
 paths:
   /healthz:
     get:
@@ -24,6 +26,25 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /parse-treat:
+    post:
+      operationId: parseTreat
+      tags: [parse-treat]
+      summary: Parse treat and location from text
+      description: Extracts the treat name and its location from a given text using AI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ParseTreatRequest"
+      responses:
+        "200":
+          description: Parsed treat and location
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParseTreatResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +54,21 @@ components:
           type: string
       required:
         - status
+    ParseTreatRequest:
+      type: object
+      properties:
+        text:
+          type: string
+      required:
+        - text
+    ParseTreatResponse:
+      type: object
+      properties:
+        treat:
+          type: string
+        location:
+          type: string
+      required:
+        - treat
+        - location
 

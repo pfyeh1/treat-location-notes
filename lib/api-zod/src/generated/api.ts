@@ -14,3 +14,16 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * Extracts the treat name and its location from a given text using AI
+ * @summary Parse treat and location from text
+ */
+export const ParseTreatBody = zod.object({
+  text: zod.string(),
+});
+
+export const ParseTreatResponse = zod.object({
+  treat: zod.string(),
+  location: zod.string(),
+});

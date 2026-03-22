@@ -5,13 +5,6 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-export interface HealthStatus {
-  status: string;
-}
-
-export interface ParseTreatRequest {
-  text: string;
-}
 
 export interface ParseTreatResponse {
   treat: string;

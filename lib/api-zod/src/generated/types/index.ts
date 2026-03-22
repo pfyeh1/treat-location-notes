@@ -7,3 +7,5 @@
  */
 
 export * from "./healthStatus";
+export * from "./parseTreatRequest";
+export * from "./parseTreatResponse";
