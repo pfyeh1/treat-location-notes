@@ -1,5 +1,5 @@
 kind = "api"
-previewPath = "/api" # TODO - should be excluded from preview in the first place
+previewPath = "/api"
 title = "API Server"
 version = "1.0.0"
 id = "3B4_FFSkEVBkAeYMFRJ2e"
@@ -10,7 +10,7 @@ name = "API Server"
 paths = ["/api"]
 
 [services.development]
-run = "uvicorn main:app --host 0.0.0.0 --port $PORT --reload --app-dir /home/runner/workspace/artifacts/api-server"
+run = "bash -c 'cd /home/runner/workspace && python main.py'"
 
 [services.production]
 
@@ -18,7 +18,7 @@ run = "uvicorn main:app --host 0.0.0.0 --port $PORT --reload --app-dir /home/run
 args = []
 
 [services.production.run]
-args = ["bash", "-c", "uvicorn main:app --host 0.0.0.0 --port $PORT --app-dir /home/runner/workspace/artifacts/api-server"]
+args = ["bash", "-c", "cd /home/runner/workspace && python main.py"]
 
 [services.production.run.env]
 PORT = "8080"
