@@ -41,9 +41,9 @@ async def health():
 @router.post("/parse-treat", response_model=ParseTreatResponse)
 async def parse_treat(body: ParseTreatRequest):
     prompt = (
-        'You are a text parser. Extract the treat and its location from the following text.\n'
+        "You are a text parser. Extract the treat and its location from the following text.\n"
         'Respond ONLY with a JSON object in this exact format: {"treat": "<treat name>", "location": "<location>"}\n'
-        'Do not include any explanation, markdown, or extra text.\n\n'
+        "Do not include any explanation, markdown, or extra text.\n\n"
         f'Text: "{body.text}"'
     )
 
@@ -53,7 +53,7 @@ async def parse_treat(body: ParseTreatRequest):
     )
 
     raw = response.text or ""
-    match = re.search(r'\{[\s\S]*\}', raw)
+    match = re.search(r"\{[\s\S]*\}", raw)
     if not match:
         raise HTTPException(status_code=500, detail="Failed to parse response from AI")
 
@@ -61,12 +61,14 @@ async def parse_treat(body: ParseTreatRequest):
         data = json.loads(match.group())
         return ParseTreatResponse(**data)
     except Exception:
-        raise HTTPException(status_code=500, detail="AI response did not match expected schema")
+        raise HTTPException(
+            status_code=500, detail="AI response did not match expected schema"
+        )
 
 
 app.include_router(router)
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
+    port = int(os.environ.get("PORT", 8080))
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
