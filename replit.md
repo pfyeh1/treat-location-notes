@@ -1,96 +1,48 @@
-# Workspace
+# Treat Parser API
 
 ## Overview
 
-pnpm workspace monorepo. The API server is a Python FastAPI app using Gemini AI via Replit AI Integrations.
+A FastAPI (Python) app that uses Google Gemini AI to extract a treat and its location from free-form text.
 
 ## Stack
 
-- **Monorepo tool**: pnpm workspaces
-- **Node.js version**: 24
-- **Package manager**: pnpm
-- **TypeScript version**: 5.9
-- **API framework**: FastAPI (Python 3.11) — served via uvicorn
-- **AI**: Google Gemini (`google-genai`) via Replit AI Integrations (no user API key needed)
-- **Database**: PostgreSQL + Drizzle ORM (available, not currently used)
-- **Validation**: Zod (`zod/v4`), `drizzle-zod` (TypeScript libs), Pydantic (Python)
-- **API codegen**: Orval (from OpenAPI spec)
-- **Build**: esbuild (CJS bundle — unused now that server is Python)
+- **Language**: Python 3.11
+- **API framework**: FastAPI + uvicorn (hot reload enabled)
+- **AI**: Google Gemini (`google-genai`) via Replit AI Integrations — no API key required
+- **Validation**: Pydantic
 
-## Structure
+## Project Structure
 
-```text
-artifacts-monorepo/
-├── artifacts/              # Deployable applications
-│   └── api-server/         # Express API server
-├── lib/                    # Shared libraries
-│   ├── api-spec/           # OpenAPI spec + Orval codegen config
-│   ├── api-client-react/   # Generated React Query hooks
-│   ├── api-zod/            # Generated Zod schemas from OpenAPI
-│   └── db/                 # Drizzle ORM schema + DB connection
-├── scripts/                # Utility scripts (single workspace package)
-│   └── src/                # Individual .ts scripts, run via `pnpm --filter @workspace/scripts run <script>`
-├── pnpm-workspace.yaml     # pnpm workspace (artifacts/*, lib/*, lib/integrations/*, scripts)
-├── tsconfig.base.json      # Shared TS options (composite, bundler resolution, es2022)
-├── tsconfig.json           # Root TS project references
-└── package.json            # Root package with hoisted devDeps
+```
+main.py            # FastAPI app — all routes and Gemini logic
+requirements.txt   # Python dependencies
+pyproject.toml     # Python project metadata (managed by uv)
+uv.lock            # Locked dependency versions
 ```
 
-## TypeScript & Composite Projects
+## Endpoints
 
-Every package extends `tsconfig.base.json` which sets `composite: true`. The root `tsconfig.json` lists all packages as project references. This means:
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/healthz` | Health check |
+| POST | `/api/parse-treat` | Extract treat + location from text |
 
-- **Always typecheck from the root** — run `pnpm run typecheck` (which runs `tsc --build --emitDeclarationOnly`). This builds the full dependency graph so that cross-package imports resolve correctly. Running `tsc` inside a single package will fail if its dependencies haven't been built yet.
-- **`emitDeclarationOnly`** — we only emit `.d.ts` files during typecheck; actual JS bundling is handled by esbuild/tsx/vite...etc, not `tsc`.
-- **Project references** — when package A depends on package B, A's `tsconfig.json` must list B in its `references` array. `tsc --build` uses this to determine build order and skip up-to-date packages.
+### Example
 
-## Root Scripts
+```bash
+curl -X POST http://localhost/api/parse-treat \
+  -H "Content-Type: application/json" \
+  -d '{"text": "I hid the Oreos behind the flour"}'
 
-- `pnpm run build` — runs `typecheck` first, then recursively runs `build` in all packages that define it
-- `pnpm run typecheck` — runs `tsc --build --emitDeclarationOnly` using project references
+# → {"treat": "Oreos", "location": "behind the flour"}
+```
 
-## Packages
+## Running
 
-### `artifacts/api-server`
+Click the green **Run** button — it starts `python main.py` which launches uvicorn on `PORT` (default 8000) with hot reload.
 
-FastAPI (Python 3.11) server. Entry point is `main.py`. Served by uvicorn. Routes are mounted under `/api` via the proxy.
+## Environment Variables
 
-- Entry: `artifacts/api-server/main.py` — FastAPI app definition + all route handlers
-- Routes:
-  - `GET /api/healthz` — health check
-  - `POST /api/parse-treat` — accepts `{"text": "..."}`, returns `{"treat": "...", "location": "..."}`
-- AI: uses `google-genai` Python SDK with Replit AI Integrations (env vars `AI_INTEGRATIONS_GEMINI_API_KEY` and `AI_INTEGRATIONS_GEMINI_BASE_URL` are auto-set)
-- Dev server: `uvicorn main:app --host 0.0.0.0 --port $PORT --reload --app-dir /home/runner/workspace/artifacts/api-server`
-
-### `lib/db` (`@workspace/db`)
-
-Database layer using Drizzle ORM with PostgreSQL. Exports a Drizzle client instance and schema models.
-
-- `src/index.ts` — creates a `Pool` + Drizzle instance, exports schema
-- `src/schema/index.ts` — barrel re-export of all models
-- `src/schema/<modelname>.ts` — table definitions with `drizzle-zod` insert schemas (no models definitions exist right now)
-- `drizzle.config.ts` — Drizzle Kit config (requires `DATABASE_URL`, automatically provided by Replit)
-- Exports: `.` (pool, db, schema), `./schema` (schema only)
-
-Production migrations are handled by Replit when publishing. In development, we just use `pnpm --filter @workspace/db run push`, and we fallback to `pnpm --filter @workspace/db run push-force`.
-
-### `lib/api-spec` (`@workspace/api-spec`)
-
-Owns the OpenAPI 3.1 spec (`openapi.yaml`) and the Orval config (`orval.config.ts`). Running codegen produces output into two sibling packages:
-
-1. `lib/api-client-react/src/generated/` — React Query hooks + fetch client
-2. `lib/api-zod/src/generated/` — Zod schemas
-
-Run codegen: `pnpm --filter @workspace/api-spec run codegen`
-
-### `lib/api-zod` (`@workspace/api-zod`)
-
-Generated Zod schemas from the OpenAPI spec (e.g. `HealthCheckResponse`). Used by `api-server` for response validation.
-
-### `lib/api-client-react` (`@workspace/api-client-react`)
-
-Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHealthCheck`, `healthCheck`).
-
-### `scripts` (`@workspace/scripts`)
-
-Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
+Set automatically by Replit — do not modify:
+- `AI_INTEGRATIONS_GEMINI_API_KEY`
+- `AI_INTEGRATIONS_GEMINI_BASE_URL`
