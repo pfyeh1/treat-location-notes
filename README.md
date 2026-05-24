@@ -2,6 +2,9 @@
 
 A lightweight, serverless Python API that uses Apple iOS Shortcuts and Google Gemini AI to log and track hidden objects (like treats) in real-time. Project integrates iOS shortcuts, backend logic, and NLP processing (Gemini) to turn turn unstructured voice or text inputs into structured data logs in iOS notes.
 
+## To Run
+For now, the app is optimized to run inside Replit. Deploying to production requires changes to parts of the code.
+
 ---
 
 ## Architecture Overview
