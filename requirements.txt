@@ -2,3 +2,4 @@ fastapi==0.135.1
 uvicorn[standard]==0.42.0
 google-genai==1.68.0
 pydantic==2.12.5
+sift-stack-py
